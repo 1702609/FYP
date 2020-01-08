@@ -1,28 +1,13 @@
-import os
-import re
 import sys
 sys.path.append('.')
 import cv2
-import math
-import time
-import scipy
 import argparse
-import matplotlib
 import numpy as np
-import pylab as plt
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.autograd import Variable
-from collections import OrderedDict
-from scipy.ndimage.morphology import generate_binary_structure
-from scipy.ndimage.filters import gaussian_filter, maximum_filter
-
 from lib.network.rtpose_vgg import get_model
-from lib.network import im_transform
 from lib.config import update_config, cfg
-from evaluate.coco_eval import get_outputs, handle_paf_and_heat
-from lib.utils.common import Human, BodyPart, CocoPart, CocoColors, CocoPairsRender, DrawHuman
+from evaluate.coco_eval import get_outputs
+from lib.utils.common import DrawHuman
 from lib.utils.paf_to_pose import paf_to_pose_cpp
 
 
@@ -47,11 +32,11 @@ model.float()
 model.eval()
 
 if __name__ == "__main__":
-    
+    evenFrame = True;
     video_capture = cv2.VideoCapture('assault1.mp4')
-
+    hd = DrawHuman()
     while True:
-        # Capture frame-by-frame
+        evenFrame = not evenFrame
         ret, oriImg = video_capture.read()
         
         shape_dst = np.min(oriImg.shape[0:2])
@@ -62,14 +47,13 @@ if __name__ == "__main__":
                   
         humans = paf_to_pose_cpp(heatmap, paf, cfg)
         #print("There are "+ str(len(humans)) + " humans in the video")
-        hd = DrawHuman(oriImg, humans)
-        out = hd.draw_humans()
-        # Display the resulting frame
+        out = hd.draw_humans(oriImg, humans, evenFrame)
         cv2.imshow('Video', out)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-
+        if (evenFrame):
+            print("This is how much pixel has changed "+str(hd.getSpeed()))
     # When everything is done, release the capture
     video_capture.release()
     cv2.destroyAllWindows()

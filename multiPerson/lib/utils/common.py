@@ -1,3 +1,5 @@
+import math
+
 import cv2
 from enum import Enum
 class CocoPart(Enum):
@@ -219,18 +221,36 @@ class Human:
         return self.__str__()
 
 class DrawHuman:
-    def __init__(self, npimg, humans):
+    def __init__(self):
+        self.pixel_change = []
+
+
+        self.noseFrameOne = []
+        self.noseFrameTwo = []
+
+        self.leftHandFrameOne = []
+        self.leftHandFrameTwo = []
+
+        self.rightHandFrameOne = []
+        self.rightHandFrameTwo = []
+
+        self.leftFootFrameOne = []
+        self.leftFootFrameTwo = []
+
+        self.rightFootFrameOne = []
+        self.rightFootFrameTwo = []
+
+    def draw_humans(self,npimg,humans,frameEven,imgcopy=False):
         self.npimg = npimg
         self.humans = humans
-
-    def draw_humans(self,imgcopy=False):
+        self.frameEven = frameEven
         if imgcopy:
             self.npimg = np.copy(self.npimg)
         image_h, image_w = self.npimg.shape[:2]
         centers = {}
-        humanID = 0
+        self.humanID = 0
         for human in self.humans:
-            humanID +=1
+            self.humanID +=1
             # draw point
             for i in range(CocoPart.Background.value):
                 if i not in human.body_parts.keys():
@@ -240,10 +260,6 @@ class DrawHuman:
                 center = (int(body_part.x * image_w + 0.5), int(body_part.y * image_h + 0.5))
                 centers[i] = center
                 cv2.circle(self.npimg, center, 3, CocoColors[i], thickness=3, lineType=8, shift=0)
-                if (body_part.part_idx == 0):
-                    nose_coord = (int(body_part.x * image_w + 0.5), int(body_part.y * image_h + 0.6))
-                    nose_dict = {human:nose_coord}
-                    self.analyzeHead(nose_coord)
                 self.analyzeBodyParts(body_part.part_idx, center)
             # draw line
             for pair_order, pair in enumerate(CocoPairsRender):
@@ -254,83 +270,59 @@ class DrawHuman:
 
     def analyzeBodyParts(self, bodyPart, points):
         if (bodyPart == 0):
-            self.analyzeHead(points)
+            self.analyzeLimbs(points, self.noseFrameOne, self.noseFrameTwo, "Head", 1)
         if (bodyPart == 13):
-            self.analyzeLeftFoot(points)
+            self.analyzeLimbs(points, self.leftFootFrameOne, self.leftFootFrameTwo, "LFoot", 2)
         if (bodyPart == 10):
-            self.analyzeRightFoot(points)
+            self.analyzeLimbs(points, self.rightFootFrameOne, self.rightFootFrameTwo, "RFoot", 3)
         if (bodyPart == 7):
-            self.analyzeLeftHand(points)
+            self.analyzeLimbs(points, self.leftHandFrameOne, self.leftHandFrameTwo, "LHand", 4)
         if (bodyPart == 4):
-            self.analyzeRightHand(points)
+            self.analyzeLimbs(points, self.rightHandFrameOne, self.rightHandFrameTwo, "RHand", 5)
 
-    def analyzeHead(self,points):
-        try:
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            org = (points)
-            fontScale = 1
-            color = (255, 0, 0)
-            thickness = 2
-            cv2.putText(self.npimg, 'Head', org, font,
-                       fontScale, color, thickness, cv2.LINE_AA)
-            points[1] = points[1] - 0.1
-            cv2.rectangle(self.npimg, points, color, 1)
-        except:
-            pass
-
-    def analyzeLeftFoot(self,points):
-        try:
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            org = (points)
-            fontScale = 1
-            color = (255, 0, 0)
-            thickness = 2
-            cv2.putText(self.npimg, 'LFoot', org, font,
-                       fontScale, color, thickness, cv2.LINE_AA)
-            points[1] = points[1] - 0.1
-            cv2.rectangle(self.npimg, points, color, 1)
-        except:
-            pass
-    def analyzeRightFoot(self,points):
-        try:
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            org = (points)
-            fontScale = 1
-            color = (255, 0, 0)
-            thickness = 2
-            cv2.putText(self.npimg, 'RFoot', org, font,
-                       fontScale, color, thickness, cv2.LINE_AA)
-            points[1] = points[1] - 0.1
-            cv2.rectangle(self.npimg, points, color, 1)
-        except:
-            pass
-    def analyzeLeftHand(self,points):
-        try:
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            org = (points)
-            fontScale = 1
-            color = (255, 0, 0)
-            thickness = 2
-            cv2.putText(self.npimg, 'LHand', org, font,
-                       fontScale, color, thickness, cv2.LINE_AA)
-            points[1] = points[1] - 0.1
-            cv2.rectangle(self.npimg, points, color, 1)
-        except:
-            pass
-
-    def analyzeRightHand(self, points):
+    def analyzeLimbs(self, points, frameOne, frameTwo, limbName, pixelChangeMode):
         try:
             font = cv2.FONT_HERSHEY_SIMPLEX
             org = (points)
             fontScale = 0.5
             color = (255, 0, 0)
             thickness = 1
-            cv2.putText(self.npimg, 'RHand', org, font,
+            cv2.putText(self.npimg, limbName, org, font,
                         fontScale, color, thickness, cv2.LINE_AA)
-            points[1] = points[1] - 0.1
-            cv2.rectangle(self.npimg, points, color, 1)
+            if (self.frameEven):
+                frameTwo.append(points)
+                self.pixelChangeCalculator(pixelChangeMode)
+                frameOne.clear()
+                frameTwo.clear()
+            else:
+                frameOne.append(points)
         except:
-            pass
+            if (self.frameEven):
+                frameTwo.append(None)
+            else:
+                frameOne.append(None)
+        print("Frame one: "+str(frameOne)+" for "+limbName)
+        print("Frame two: "+str(frameTwo)+" for "+limbName)
+
+    def pixelChangeCalculator(self, mode):
+        if (mode == 1): #Head
+            for i in range(0, len(self.noseFrameOne)):
+                frame1 = self.noseFrameOne[i]
+                frame2 = self.noseFrameTwo[i]
+                self.pixel_change.append(self.pixelChangeAlgorithm(frame1,frame2))
+
+    def pixelChangeAlgorithm(self, tupleFrame1,tupleFrame2):
+        firstFrame = tupleFrame1
+        secondFrame = tupleFrame2
+        changeInX = abs(firstFrame[0] - secondFrame[0]) ** 2
+        changeInY = abs(firstFrame[1] - secondFrame[1]) ** 2
+        moveDistance = math.sqrt(changeInX + changeInY)
+        moveDistance = round(moveDistance, 2)
+        return moveDistance
+
+    def getSpeed(self):
+        return self.pixel_change
+
 class BodyPart:
     """
     part_idx : part index(eg. 0 for nose)
