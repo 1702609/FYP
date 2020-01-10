@@ -1,4 +1,6 @@
 import sys
+from tkinter import Label
+
 sys.path.append('.')
 import cv2
 import argparse
@@ -10,6 +12,40 @@ from evaluate.coco_eval import get_outputs
 from lib.utils.common import DrawHuman
 from lib.utils.paf_to_pose import paf_to_pose_cpp
 
+class GUIStats:
+    def __init__(self, numberOfPeople):
+        self.numberOfPeople = numberOfPeople
+
+    def gui(self):
+        self.window.title("Movement Stats")
+        self.window.minsize(700, 700)
+        for x in range(0,self.numberOfPeople):
+            head = Label(self.window, text="head")
+            head.grid(column=0, row=0)
+            self.headSpeed = Label(self.window, text="Detecting")
+            self.headSpeed.grid(column=1, row=0)
+
+            leftHand = Label(self.window, text="left hand")
+            leftHand.grid(column=0, row=1)
+            self.leftHandSpeed = Label(self.window, text="Detecting")
+            self.leftHandSpeed.grid(column=1, row=1)
+
+            rightHand = Label(self.window, text="right hand")
+            rightHand.grid(column=0, row=2)
+            self.rightHandSpeed = Label(self.window, text="Detecting")
+            self.rightHandSpeed.grid(column=1, row=2)
+
+            leftFoot = Label(self.window, text="left foot")
+            leftFoot.grid(column=0, row=3)
+            self.leftFootSpeed = Label(self.window, text="Detecting")
+            self.leftFootSpeed.grid(column=1, row=3)
+
+            rightFoot = Label(self.window, text="right foot")
+            rightFoot.grid(column=0, row=4)
+            self.rightFootSpeed = Label(self.window, text="Detecting")
+            self.rightFootSpeed.grid(column=1, row=4)
+
+            self.window.update()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--cfg', help='experiment configure file name',
@@ -53,7 +89,10 @@ if __name__ == "__main__":
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
         if (evenFrame):
-            print("This is how much pixel has changed "+str(hd.getSpeed()))
+            hd.calculateSpeedForIndLimbs()
+            listOfSpeed = hd.getSpeed()
+            print("This is how much pixel has changed "+str(listOfSpeed))
+            hd.clearSpeedData()
     # When everything is done, release the capture
     video_capture.release()
     cv2.destroyAllWindows()

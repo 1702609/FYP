@@ -222,8 +222,11 @@ class Human:
 
 class DrawHuman:
     def __init__(self):
-        self.pixel_change = []
-
+        self.nose_pixel_change = []
+        self.leftHand_pixel_change = []
+        self.rightHand_pixel_change = []
+        self.leftFoot_pixel_change = []
+        self.rightFoot_pixel_change = []
 
         self.noseFrameOne = []
         self.noseFrameTwo = []
@@ -240,22 +243,17 @@ class DrawHuman:
         self.rightFootFrameOne = []
         self.rightFootFrameTwo = []
 
-    def draw_humans(self,npimg,humans,frameEven,imgcopy=False):
+    def draw_humans(self,npimg,humans,frameEven):
         self.npimg = npimg
         self.humans = humans
         self.frameEven = frameEven
-        if imgcopy:
-            self.npimg = np.copy(self.npimg)
         image_h, image_w = self.npimg.shape[:2]
         centers = {}
-        self.humanID = 0
         for human in self.humans:
-            self.humanID +=1
             # draw point
             for i in range(CocoPart.Background.value):
                 if i not in human.body_parts.keys():
                     continue
-
                 body_part = human.body_parts[i]
                 center = (int(body_part.x * image_w + 0.5), int(body_part.y * image_h + 0.5))
                 centers[i] = center
@@ -270,17 +268,17 @@ class DrawHuman:
 
     def analyzeBodyParts(self, bodyPart, points):
         if (bodyPart == 0):
-            self.analyzeLimbs(points, self.noseFrameOne, self.noseFrameTwo, "Head", 1)
+            self.analyzeLimbs(points, self.noseFrameOne, self.noseFrameTwo, "Head")
         if (bodyPart == 13):
-            self.analyzeLimbs(points, self.leftFootFrameOne, self.leftFootFrameTwo, "LFoot", 2)
+            self.analyzeLimbs(points, self.leftFootFrameOne, self.leftFootFrameTwo, "LFoot")
         if (bodyPart == 10):
-            self.analyzeLimbs(points, self.rightFootFrameOne, self.rightFootFrameTwo, "RFoot", 3)
+            self.analyzeLimbs(points, self.rightFootFrameOne, self.rightFootFrameTwo, "RFoot")
         if (bodyPart == 7):
-            self.analyzeLimbs(points, self.leftHandFrameOne, self.leftHandFrameTwo, "LHand", 4)
+            self.analyzeLimbs(points, self.leftHandFrameOne, self.leftHandFrameTwo, "LHand")
         if (bodyPart == 4):
-            self.analyzeLimbs(points, self.rightHandFrameOne, self.rightHandFrameTwo, "RHand", 5)
+            self.analyzeLimbs(points, self.rightHandFrameOne, self.rightHandFrameTwo, "RHand")
 
-    def analyzeLimbs(self, points, frameOne, frameTwo, limbName, pixelChangeMode):
+    def analyzeLimbs(self, points, frameOne, frameTwo, limbName):
         try:
             font = cv2.FONT_HERSHEY_SIMPLEX
             org = (points)
@@ -291,25 +289,38 @@ class DrawHuman:
                         fontScale, color, thickness, cv2.LINE_AA)
             if (self.frameEven):
                 frameTwo.append(points)
-                self.pixelChangeCalculator(pixelChangeMode)
-                frameOne.clear()
-                frameTwo.clear()
             else:
                 frameOne.append(points)
+            print("Frame one: " + str(frameOne) + " for " + limbName)
+            print("Frame two: " + str(frameTwo) + " for " + limbName)
         except:
             if (self.frameEven):
                 frameTwo.append(None)
             else:
                 frameOne.append(None)
-        print("Frame one: "+str(frameOne)+" for "+limbName)
-        print("Frame two: "+str(frameTwo)+" for "+limbName)
+
+    def calculateSpeedForIndLimbs(self):
+        self.pixelChangeCalculator(1)
+        self.noseFrameOne = []
+        self.noseFrameTwo = []
+
+        self.leftHandFrameOne = []
+        self.leftHandFrameTwo = []
+        self.rightHandFrameOne = []
+        self.rightHandFrameTwo = []
+
+        self.leftFootFrameOne = []
+        self.leftFootFrameTwo = []
+        self.rightFootFrameOne = []
+        self.rightFootFrameTwo = []
+
 
     def pixelChangeCalculator(self, mode):
         if (mode == 1): #Head
             for i in range(0, len(self.noseFrameOne)):
                 frame1 = self.noseFrameOne[i]
                 frame2 = self.noseFrameTwo[i]
-                self.pixel_change.append(self.pixelChangeAlgorithm(frame1,frame2))
+                self.nose_pixel_change.append(self.pixelChangeAlgorithm(frame1,frame2))
 
     def pixelChangeAlgorithm(self, tupleFrame1,tupleFrame2):
         firstFrame = tupleFrame1
@@ -321,7 +332,15 @@ class DrawHuman:
         return moveDistance
 
     def getSpeed(self):
-        return self.pixel_change
+        list_of_speed = [self.nose_pixel_change, self.leftHand_pixel_change, self.rightHand_pixel_change, self.leftFoot_pixel_change, self.rightFoot_pixel_change]
+        return list_of_speed
+
+    def clearSpeedData(self):
+        self.nose_pixel_change = []
+        self.leftHand_pixel_change = []
+        self.rightHand_pixel_change = []
+        self.leftFoot_pixel_change = []
+        self.rightFoot_pixel_change = []
 
 class BodyPart:
     """
