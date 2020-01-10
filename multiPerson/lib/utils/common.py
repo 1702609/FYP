@@ -2,6 +2,8 @@ import math
 
 import cv2
 from enum import Enum
+
+
 class CocoPart(Enum):
     Nose = 0
     Neck = 1
@@ -22,6 +24,7 @@ class CocoPart(Enum):
     REar = 16
     LEar = 17
     Background = 18
+
 
 class Human:
     """
@@ -220,8 +223,10 @@ class Human:
     def __repr__(self):
         return self.__str__()
 
+
 class DrawHuman:
-    def __init__(self):
+    def __init__(self, numberOfHumans):
+        self.numberOfHumans = numberOfHumans
         self.nose_pixel_change = []
         self.leftHand_pixel_change = []
         self.rightHand_pixel_change = []
@@ -243,7 +248,7 @@ class DrawHuman:
         self.rightFootFrameOne = []
         self.rightFootFrameTwo = []
 
-    def draw_humans(self,npimg,humans,frameEven):
+    def draw_humans(self, npimg, humans, frameEven):
         self.npimg = npimg
         self.humans = humans
         self.frameEven = frameEven
@@ -300,29 +305,36 @@ class DrawHuman:
                 frameOne.append(None)
 
     def calculateSpeedForIndLimbs(self):
-        self.pixelChangeCalculator(1)
+        self.pixelChangeCalculator(self.noseFrameOne, self.noseFrameTwo, self.nose_pixel_change)
         self.noseFrameOne = []
         self.noseFrameTwo = []
 
+        self.pixelChangeCalculator(self.leftHandFrameOne, self.leftHandFrameTwo, self.leftHand_pixel_change)
         self.leftHandFrameOne = []
         self.leftHandFrameTwo = []
+
+        self.pixelChangeCalculator(self.rightFootFrameOne, self.rightHandFrameTwo, self.rightHand_pixel_change)
         self.rightHandFrameOne = []
         self.rightHandFrameTwo = []
 
+        self.pixelChangeCalculator(self.leftFootFrameOne, self.leftFootFrameTwo, self.leftFoot_pixel_change)
         self.leftFootFrameOne = []
         self.leftFootFrameTwo = []
+
+        self.pixelChangeCalculator(self.rightFootFrameOne, self.rightFootFrameTwo, self.rightFoot_pixel_change)
         self.rightFootFrameOne = []
         self.rightFootFrameTwo = []
 
+    def pixelChangeCalculator(self, frameOne, frameTwo, pixelChange):
+        for i in range(self.numberOfHumans):
+            try:
+                frame1 = frameOne[i]
+                frame2 = frameTwo[i]
+                pixelChange.append(self.pixelChangeAlgorithm(frame1, frame2))
+            except:
+                pixelChange.append(None)
 
-    def pixelChangeCalculator(self, mode):
-        if (mode == 1): #Head
-            for i in range(0, len(self.noseFrameOne)):
-                frame1 = self.noseFrameOne[i]
-                frame2 = self.noseFrameTwo[i]
-                self.nose_pixel_change.append(self.pixelChangeAlgorithm(frame1,frame2))
-
-    def pixelChangeAlgorithm(self, tupleFrame1,tupleFrame2):
+    def pixelChangeAlgorithm(self, tupleFrame1, tupleFrame2):
         firstFrame = tupleFrame1
         secondFrame = tupleFrame2
         changeInX = abs(firstFrame[0] - secondFrame[0]) ** 2
@@ -332,7 +344,8 @@ class DrawHuman:
         return moveDistance
 
     def getSpeed(self):
-        list_of_speed = [self.nose_pixel_change, self.leftHand_pixel_change, self.rightHand_pixel_change, self.leftFoot_pixel_change, self.rightFoot_pixel_change]
+        list_of_speed = [self.nose_pixel_change, self.leftHand_pixel_change, self.rightHand_pixel_change,
+                         self.leftFoot_pixel_change, self.rightFoot_pixel_change]
         return list_of_speed
 
     def clearSpeedData(self):
@@ -341,6 +354,7 @@ class DrawHuman:
         self.rightHand_pixel_change = []
         self.leftFoot_pixel_change = []
         self.rightFoot_pixel_change = []
+
 
 class BodyPart:
     """
@@ -364,13 +378,14 @@ class BodyPart:
 
     def __repr__(self):
         return self.__str__()
-        
+
+
 CocoColors = [[255, 0, 0], [255, 85, 0], [255, 170, 0], [255, 255, 0], [170, 255, 0], [85, 255, 0], [0, 255, 0],
               [0, 255, 85], [0, 255, 170], [0, 255, 255], [0, 170, 255], [0, 85, 255], [0, 0, 255], [85, 0, 255],
               [170, 0, 255], [255, 0, 255], [255, 0, 170], [255, 0, 85]]
-              
+
 CocoPairs = [
     (1, 2), (1, 5), (2, 3), (3, 4), (5, 6), (6, 7), (1, 8), (8, 9), (9, 10), (1, 11),
     (11, 12), (12, 13), (1, 0), (0, 14), (14, 16), (0, 15), (15, 17), (2, 16), (5, 17)
-]   # = 19
+]  # = 19
 CocoPairsRender = CocoPairs[:-2]
