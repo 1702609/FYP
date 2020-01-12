@@ -279,6 +279,7 @@ print("Calculating how much pixel is needed to cover people's height")
 videoPath = "dataset/Test/starJump.mp4"
 preTest = pixelToCentimeter(videoPath)
 cmPerPixel = preTest.calculateCentimeterPerPixel()
+
 print("1 pixel is equal to " + str(cmPerPixel) + " cm")
 p1 = PoseEstimationVideo(videoPath, cmPerPixel)
 p1.runAnalysis()

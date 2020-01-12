@@ -296,8 +296,6 @@ class DrawHuman:
                 frameTwo.append(points)
             else:
                 frameOne.append(points)
-            print("Frame one: " + str(frameOne) + " for " + limbName)
-            print("Frame two: " + str(frameTwo) + " for " + limbName)
         except:
             if (self.frameEven):
                 frameTwo.append(None)

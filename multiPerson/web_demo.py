@@ -2,6 +2,7 @@ import sys
 from tkinter import Label
 
 from GUIForStats import GUIForStats
+from pixelToCentimeter import pixelToCentimeter
 
 sys.path.append('.')
 import cv2
@@ -34,12 +35,36 @@ model.cuda()
 model.float()
 model.eval()
 
+
+def maximumNumberOfHuman():
+    humanLength = []
+    for i in range(5): #it will sample 5 frames to find maximum number of people in the video
+        _, oriImg = video_capture.read()
+        with torch.no_grad():
+            paf, heatmap, imscale = get_outputs(
+                oriImg, model, 'rtpose')
+
+        humans = paf_to_pose_cpp(heatmap, paf, cfg)
+        humanLength.append(len(humans))
+    humanLength.sort()
+    return humanLength[-1]
+
+def determineHumanSizeInVideo():
+    print("Calculating the pixels required to cover a person's height...")
+    cmPerPixelObject = pixelToCentimeter(videoPath)
+    return cmPerPixelObject.calculateCentimeterPerPixel()
+
 if __name__ == "__main__":
+    videoPath = 'dataset/Assault/assault4.mp4'
+
     evenFrame = True;
-    video_capture = cv2.VideoCapture('assault1.mp4')
-    numberOfHumans = 2
+    video_capture = cv2.VideoCapture(videoPath)
+    fps = video_capture.get(cv2.CAP_PROP_FPS)
+    numberOfHumans = maximumNumberOfHuman()
+    cmPerPixel = determineHumanSizeInVideo()
+    print("1 pixel represents "+str(cmPerPixel))
     hd = DrawHuman(numberOfHumans)
-    gui = GUIForStats(numberOfHumans)
+    gui = GUIForStats(numberOfHumans,cmPerPixel,fps)
     while True:
         evenFrame = not evenFrame
         ret, oriImg = video_capture.read()
@@ -60,7 +85,6 @@ if __name__ == "__main__":
         if (evenFrame):
             hd.calculateSpeedForIndLimbs()
             listOfSpeed = hd.getSpeed()
-            print("This is how much pixel has changed "+str(listOfSpeed))
             gui.drawGUI(listOfSpeed)
             hd.clearSpeedData()
     # When everything is done, release the capture
