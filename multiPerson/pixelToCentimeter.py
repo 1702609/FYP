@@ -25,21 +25,20 @@ class pixelToCentimeter:
                 cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 3)
                 if frames >= 20:
                     heightArray.append(h)
-                    print("The height is " + str(h))
             cv2.imshow('img', img)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
         video.release()
         cv2.destroyAllWindows()
 
-        averageHeight = 190  # Average height
+        averageHeight = 170  # Average height
 
         clusterGroup = self.parse(heightArray, 9)
         meanData = []
         for cluster in clusterGroup:
             meanData.append(self.Average(cluster))
         meanData.sort()
-        answer = median(meanData)/averageHeight
+        answer = averageHeight/median(meanData)
         return answer
 
     def Average(self, lst):

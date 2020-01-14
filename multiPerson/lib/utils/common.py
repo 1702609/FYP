@@ -1,5 +1,4 @@
 import math
-
 import cv2
 from enum import Enum
 
@@ -324,10 +323,11 @@ class DrawHuman:
         self.rightFootFrameTwo = []
 
     def pixelChangeCalculator(self, frameOne, frameTwo, pixelChange):
+        frameTwoUpdate = self.organiseFrame2(frameOne, frameTwo)
         for i in range(self.numberOfHumans):
             try:
                 frame1 = frameOne[i]
-                frame2 = frameTwo[i]
+                frame2 = frameTwoUpdate[i]
                 pixelChange.append(self.pixelChangeAlgorithm(frame1, frame2))
             except:
                 pixelChange.append(None)
@@ -352,6 +352,20 @@ class DrawHuman:
         self.rightHand_pixel_change = []
         self.leftFoot_pixel_change = []
         self.rightFoot_pixel_change = []
+
+    def distance(self, x, coordinate):
+        x_value = abs(x[0] - coordinate[0])
+        y_value = abs(x[1] - coordinate[1])
+        return x_value + y_value
+
+    def organiseFrame2(self, frameOne, frameTwo):
+        newFrame2 = []
+        for i in range(len(frameTwo)):
+            try:
+                newFrame2.append(min(frameTwo, key=lambda x: self.distance(x, frameOne[i])))
+            except:
+                newFrame2.append(None)
+        return newFrame2
 
 
 class BodyPart:

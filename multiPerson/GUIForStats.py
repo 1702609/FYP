@@ -61,6 +61,6 @@ class GUIForStats:
 
     def updateGUI(self,data,target):
         if data is not None:
-            target.config(text=str(round(data * self.cmPerPixel * self.timeNeeded, 2)) + " cm/s")
+            target.config(text=str(round(data * self.cmPerPixel, 2)) + " cm/s")
         else:
             target.config(text=str(data))

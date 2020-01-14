@@ -59,7 +59,8 @@ if __name__ == "__main__":
 
     evenFrame = True;
     video_capture = cv2.VideoCapture(videoPath)
-    fps = video_capture.get(cv2.CAP_PROP_FPS)
+    #fps = video_capture.get(cv2.CAP_PROP_FPS)
+    fps = 8
     numberOfHumans = maximumNumberOfHuman()
     cmPerPixel = determineHumanSizeInVideo()
     print("1 pixel represents "+str(cmPerPixel))
