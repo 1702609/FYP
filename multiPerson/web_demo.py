@@ -62,7 +62,8 @@ if __name__ == "__main__":
     #fps = video_capture.get(cv2.CAP_PROP_FPS)
     fps = 8
     numberOfHumans = maximumNumberOfHuman()
-    cmPerPixel = determineHumanSizeInVideo()
+    #cmPerPixel = determineHumanSizeInVideo()
+    cmPerPixel = 0.6746
     print("1 pixel represents "+str(cmPerPixel))
     hd = DrawHuman(numberOfHumans)
     gui = GUIForStats(numberOfHumans,cmPerPixel,fps)
@@ -83,11 +84,15 @@ if __name__ == "__main__":
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+        if (not evenFrame):
+            hd.syncHumanFromPreviousFrame()
         if (evenFrame):
+            hd.syncFrameOneWithFrameTwo()
             hd.calculateSpeedForIndLimbs()
             listOfSpeed = hd.getSpeed()
             gui.drawGUI(listOfSpeed)
             hd.clearSpeedData()
+            hd.transferFrameTwoToTemp()
     # When everything is done, release the capture
     video_capture.release()
     cv2.destroyAllWindows()

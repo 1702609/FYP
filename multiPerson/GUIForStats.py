@@ -62,5 +62,7 @@ class GUIForStats:
     def updateGUI(self,data,target):
         if data is not None:
             target.config(text=str(round(data * self.cmPerPixel, 2)) + " cm/s")
+            if data*self.cmPerPixel >= 350:
+                target.config(bg="red")
         else:
             target.config(text=str(data))

@@ -2,7 +2,6 @@ import math
 import cv2
 from enum import Enum
 
-
 class CocoPart(Enum):
     Nose = 0
     Neck = 1
@@ -23,7 +22,6 @@ class CocoPart(Enum):
     REar = 16
     LEar = 17
     Background = 18
-
 
 class Human:
     """
@@ -222,7 +220,6 @@ class Human:
     def __repr__(self):
         return self.__str__()
 
-
 class DrawHuman:
     def __init__(self, numberOfHumans):
         self.numberOfHumans = numberOfHumans
@@ -234,18 +231,23 @@ class DrawHuman:
 
         self.noseFrameOne = []
         self.noseFrameTwo = []
+        self.tempNoseFrameTwo = []
 
         self.leftHandFrameOne = []
         self.leftHandFrameTwo = []
+        self.tempLeftHandFrameTwo = []
 
         self.rightHandFrameOne = []
         self.rightHandFrameTwo = []
+        self.tempRightHandFrameTwo = []
 
         self.leftFootFrameOne = []
         self.leftFootFrameTwo = []
+        self.tempLeftFootFrameTwo = []
 
         self.rightFootFrameOne = []
         self.rightFootFrameTwo = []
+        self.tempRightFootFrameTwo = []
 
     def draw_humans(self, npimg, humans, frameEven):
         self.npimg = npimg
@@ -303,31 +305,30 @@ class DrawHuman:
 
     def calculateSpeedForIndLimbs(self):
         self.pixelChangeCalculator(self.noseFrameOne, self.noseFrameTwo, self.nose_pixel_change)
-        self.noseFrameOne = []
-        self.noseFrameTwo = []
-
         self.pixelChangeCalculator(self.leftHandFrameOne, self.leftHandFrameTwo, self.leftHand_pixel_change)
-        self.leftHandFrameOne = []
-        self.leftHandFrameTwo = []
-
-        self.pixelChangeCalculator(self.rightFootFrameOne, self.rightHandFrameTwo, self.rightHand_pixel_change)
-        self.rightHandFrameOne = []
-        self.rightHandFrameTwo = []
-
+        self.pixelChangeCalculator(self.rightHandFrameOne, self.rightHandFrameTwo, self.rightHand_pixel_change)
         self.pixelChangeCalculator(self.leftFootFrameOne, self.leftFootFrameTwo, self.leftFoot_pixel_change)
-        self.leftFootFrameOne = []
-        self.leftFootFrameTwo = []
-
         self.pixelChangeCalculator(self.rightFootFrameOne, self.rightFootFrameTwo, self.rightFoot_pixel_change)
-        self.rightFootFrameOne = []
-        self.rightFootFrameTwo = []
+
+    def transferFrameTwoToTemp(self):
+        self.updateArrays(self.noseFrameOne, self.noseFrameTwo, self.tempNoseFrameTwo)
+        self.updateArrays(self.leftHandFrameOne, self.leftHandFrameTwo, self.tempLeftHandFrameTwo)
+        self.updateArrays(self.rightHandFrameOne, self.rightHandFrameTwo, self.tempRightHandFrameTwo)
+        self.updateArrays(self.leftFootFrameOne, self.leftFootFrameTwo, self.tempLeftFootFrameTwo)
+        self.updateArrays(self.rightFootFrameOne, self.rightFootFrameTwo, self.tempRightFootFrameTwo)
+
+
+    def updateArrays(self, frameOne, frameTwo, frameTwoTemp):
+        frameOne.clear()
+        for i in range(len(frameTwo)):
+            frameTwoTemp.append(frameTwo[i])
+        frameTwo.clear()
 
     def pixelChangeCalculator(self, frameOne, frameTwo, pixelChange):
-        frameTwoUpdate = self.organiseFrame2(frameOne, frameTwo)
         for i in range(self.numberOfHumans):
             try:
                 frame1 = frameOne[i]
-                frame2 = frameTwoUpdate[i]
+                frame2 = frameTwo[i]
                 pixelChange.append(self.pixelChangeAlgorithm(frame1, frame2))
             except:
                 pixelChange.append(None)
@@ -358,15 +359,43 @@ class DrawHuman:
         y_value = abs(x[1] - coordinate[1])
         return x_value + y_value
 
-    def organiseFrame2(self, frameOne, frameTwo):
-        newFrame2 = []
+    def syncFrameOneWithFrameTwo(self):
+        self.trackingAdjacentFrame(self.noseFrameOne, self.noseFrameTwo)
+        self.trackingAdjacentFrame(self.leftHandFrameOne, self.leftHandFrameTwo)
+        self.trackingAdjacentFrame(self.rightHandFrameOne, self.rightHandFrameTwo)
+        self.trackingAdjacentFrame(self.leftFootFrameOne, self.leftFootFrameTwo)
+        self.trackingAdjacentFrame(self.rightFootFrameOne, self.rightFootFrameTwo)
+
+    def trackingAdjacentFrame(self, frameOne, frameTwo):
+        newFrame = []
         for i in range(len(frameTwo)):
             try:
-                newFrame2.append(min(frameTwo, key=lambda x: self.distance(x, frameOne[i])))
+                newFrame.append(min(frameTwo, key=lambda x: self.distance(x, frameOne[i])))
             except:
-                newFrame2.append(None)
-        return newFrame2
+                newFrame.append(None)
+        frameTwo.clear()
+        for i in range(len(newFrame)):
+            frameTwo.append(newFrame[i])
 
+    def syncHumanFromPreviousFrame(self):
+        self.fixTracking(self.noseFrameOne, self.tempNoseFrameTwo)
+        self.fixTracking(self.leftHandFrameOne, self.tempLeftHandFrameTwo)
+        self.fixTracking(self.rightHandFrameOne, self.tempRightHandFrameTwo)
+        self.fixTracking(self.leftFootFrameOne, self.tempLeftFootFrameTwo)
+        self.fixTracking(self.rightFootFrameOne, self.tempRightFootFrameTwo)
+
+    def fixTracking(self, frameOne, tempFrame):
+        if tempFrame:
+            newFrame = []
+            for i in range(len(frameOne)):
+                try:
+                    newFrame.append(min(frameOne, key=lambda x: self.distance(x, tempFrame[i])))
+                except:
+                    newFrame.append(None)
+            frameOne.clear()
+            for i in range(len(newFrame)):
+                frameOne.append(newFrame[i])
+            tempFrame.clear()
 
 class BodyPart:
     """
