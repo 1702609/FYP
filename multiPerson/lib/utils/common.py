@@ -397,6 +397,74 @@ class DrawHuman:
                 frameOne.append(newFrame[i])
             tempFrame.clear()
 
+class HumanCoordinate:
+    def __init__(self, npimg, humans):
+        self.npimg = npimg
+        self.humans = humans
+
+    def singleData(self,centers,pairValue):
+        if pairValue in centers:
+            answer = centers[pairValue]
+        else:
+            answer = 0
+        return answer
+
+    def initialize_2DArray(self,size):
+        twod_list = []
+        new = []
+        for i in range (size):
+            for j in range (14):
+                new.append(None)
+            twod_list.append(new)
+            new = []
+        return twod_list
+
+
+    def collectCoordinate(self):
+        centers = {}
+        data = self.initialize_2DArray(len(self.humans))
+        image_h, image_w = self.npimg.shape[:2]
+        arrayIndex = 0
+        for human in self.humans:
+            for i in range(CocoPart.Background.value):
+                if i not in human.body_parts.keys():
+                    continue
+
+                body_part = human.body_parts[i]
+                center = (int(body_part.x * image_w + 0.5), int(body_part.y * image_h + 0.5))
+                centers[i] = center
+
+            for pair_order, pair in enumerate(CocoPairsRender):
+                if pair[0] not in human.body_parts.keys() or pair[1] not in human.body_parts.keys():
+                    continue
+                if (pair == (1,0)): #Nose to neck
+                    data[arrayIndex][0] = self.singleData(centers,pair[0])
+                    data[arrayIndex][1] = self.singleData(centers,pair[1])
+                elif (pair ==(1,11)):   #Left torso
+                    data[arrayIndex][2] = self.singleData(centers,pair[0])
+                    data[arrayIndex][3] = self.singleData(centers,pair[1])
+                elif (pair == (1, 8)): #Right torse
+                    data[arrayIndex][4] = self.singleData(centers,pair[0])
+                    data[arrayIndex][5] = self.singleData(centers,pair[1])
+                if (pair[0] == 5): #Left Arm Start
+                    data[arrayIndex][6] = self.singleData(centers,pair[0])
+                if (pair[1] == 7): #Left Arm End
+                    data[arrayIndex][7] = self.singleData(centers,pair[1])
+                if (pair[0] == 2): #Right Arm Start
+                    data[arrayIndex][8] = self.singleData(centers,pair[0])
+                if (pair[1] == 4): #Right Arm End
+                    data[arrayIndex][9] = self.singleData(centers,pair[1])
+                if (pair[0] == 11): #Left Foot Start
+                    data[arrayIndex][10] = self.singleData(centers,pair[0])
+                if (pair[1] == 13): #Left Foot End
+                    data[arrayIndex][11] = self.singleData(centers,pair[1])
+                if(pair[0] == 8): #Right Foot Start
+                    data[arrayIndex][12] = self.singleData(centers,pair[0])
+                if(pair[1] == 10): #Right Foot End
+                    data[arrayIndex][13] = self.singleData(centers,pair[1])
+            arrayIndex += 1
+        return data
+
 class BodyPart:
     """
     part_idx : part index(eg. 0 for nose)

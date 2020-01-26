@@ -1,19 +1,25 @@
+import os
+import re
 import sys
-from tkinter import Label
-
-from GUIForStats import GUIForStats
-from pixelToCentimeter import pixelToCentimeter
-
 sys.path.append('.')
 import cv2
+import math
+import time
+import scipy
 import argparse
+import matplotlib
 import numpy as np
+import pylab as plt
 import torch
+from HumanContact import HumanContact
+
 from lib.network.rtpose_vgg import get_model
+from lib.network import im_transform
 from lib.config import update_config, cfg
-from evaluate.coco_eval import get_outputs
-from lib.utils.common import DrawHuman
+from evaluate.coco_eval import get_outputs, handle_paf_and_heat
+from lib.utils.common import Human, BodyPart, CocoPart, CocoColors, CocoPairsRender, draw_humans, HumanCoordinate
 from lib.utils.paf_to_pose import paf_to_pose_cpp
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--cfg', help='experiment configure file name',
@@ -35,64 +41,34 @@ model.cuda()
 model.float()
 model.eval()
 
-
-def maximumNumberOfHuman():
-    humanLength = []
-    for i in range(5): #it will sample 5 frames to find maximum number of people in the video
-        _, oriImg = video_capture.read()
-        with torch.no_grad():
-            paf, heatmap, imscale = get_outputs(
-                oriImg, model, 'rtpose')
-
-        humans = paf_to_pose_cpp(heatmap, paf, cfg)
-        humanLength.append(len(humans))
-    humanLength.sort()
-    return humanLength[-1]
-
-def determineHumanSizeInVideo():
-    print("Calculating the pixels required to cover a person's height...")
-    cmPerPixelObject = pixelToCentimeter(videoPath)
-    return cmPerPixelObject.calculateCentimeterPerPixel()
-
 if __name__ == "__main__":
-    videoPath = 'dataset/Assault/assault4.mp4'
+    
+    image_capture = cv2.imread("contact8.jpg")
 
-    evenFrame = True;
-    video_capture = cv2.VideoCapture(videoPath)
-    #fps = video_capture.get(cv2.CAP_PROP_FPS)
-    fps = 8
-    numberOfHumans = maximumNumberOfHuman()
-    #cmPerPixel = determineHumanSizeInVideo()
-    cmPerPixel = 0.6746
-    print("1 pixel represents "+str(cmPerPixel))
-    hd = DrawHuman(numberOfHumans)
-    gui = GUIForStats(numberOfHumans,cmPerPixel,fps)
-    while True:
-        evenFrame = not evenFrame
-        ret, oriImg = video_capture.read()
-        
-        shape_dst = np.min(oriImg.shape[0:2])
+    shape_dst = np.min(image_capture.shape[0:2])
 
-        with torch.no_grad():
-            paf, heatmap, imscale = get_outputs(
-                oriImg, model, 'rtpose')
-                  
-        humans = paf_to_pose_cpp(heatmap, paf, cfg)
-        #print("There are "+ str(len(humans)) + " humans in the video")
-        out = hd.draw_humans(oriImg, humans, evenFrame)
-        cv2.imshow('Video', out)
+    with torch.no_grad():
+        paf, heatmap, imscale = get_outputs(
+            image_capture, model, 'rtpose')
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-        if (not evenFrame):
-            hd.syncHumanFromPreviousFrame()
-        if (evenFrame):
-            hd.syncFrameOneWithFrameTwo()
-            hd.calculateSpeedForIndLimbs()
-            listOfSpeed = hd.getSpeed()
-            gui.drawGUI(listOfSpeed)
-            hd.clearSpeedData()
-            hd.transferFrameTwoToTemp()
-    # When everything is done, release the capture
-    video_capture.release()
-    cv2.destroyAllWindows()
+    humans = paf_to_pose_cpp(heatmap, paf, cfg)
+
+    out = draw_humans(image_capture, humans)
+    huCoord = HumanCoordinate(image_capture, humans)
+    result = huCoord.collectCoordinate()
+    #print(result)
+    #0 Head, 1 Left Torso, 2 Right Torso, 3 left arm, 4 right arm, 5 left foot, 6 right foot
+
+    # will only execute if there is a high speed movement,
+    # detected high speed right foot movement
+    detectCol = HumanContact(result, 6)
+    #0 Head, 1 Left Torso, 2 Right Torso, 3 left arm, 4 right arm, 5 left foot, 6 right foot
+
+    collision, minIndex = detectCol.isThereACollision()
+    if (collision):
+        bodyPartVictim = detectCol.getBodyPart(minIndex)
+        print("Victim has been attacked in the " + bodyPartVictim)
+    cv2.imshow('Image', out)
+    cv2.waitKey(0)
+
+    #cv2.destroyAllWindows()

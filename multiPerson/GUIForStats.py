@@ -6,10 +6,9 @@ class GUIForStats:
     def __init__(self, numberOfPeople, cmPerPixel, fps):
         self.numberOfPeople = numberOfPeople
         self.cmPerPixel = cmPerPixel
-        self.fps = fps
         self.root = Tk()
         self.root.geometry("400x500")
-        perSecond = (1 / self.fps) * 2
+        perSecond = (1 / fps) * 2
         self.timeNeeded = 1 / perSecond
 
     def drawGUI(self, speedList):
@@ -61,8 +60,8 @@ class GUIForStats:
 
     def updateGUI(self,data,target):
         if data is not None:
-            target.config(text=str(round(data * self.cmPerPixel, 2)) + " cm/s")
-            if data*self.cmPerPixel >= 350:
+            target.config(text=str(round(data * self.cmPerPixel * self.timeNeeded, 2)) + " cm/s")
+            if data*self.cmPerPixel >= 230:
                 target.config(bg="red")
         else:
             target.config(text=str(data))
