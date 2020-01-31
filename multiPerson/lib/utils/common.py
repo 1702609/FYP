@@ -221,8 +221,7 @@ class Human:
         return self.__str__()
 
 class DrawHuman:
-    def __init__(self, numberOfHumans):
-        self.numberOfHumans = numberOfHumans
+    def __init__(self):
         self.nose_pixel_change = []
         self.leftHand_pixel_change = []
         self.rightHand_pixel_change = []
@@ -325,7 +324,7 @@ class DrawHuman:
         frameTwo.clear()
 
     def pixelChangeCalculator(self, frameOne, frameTwo, pixelChange):
-        for i in range(self.numberOfHumans):
+        for i in range(len(self.humans)):
             try:
                 frame1 = frameOne[i]
                 frame2 = frameTwo[i]
@@ -354,9 +353,12 @@ class DrawHuman:
         self.leftFoot_pixel_change = []
         self.rightFoot_pixel_change = []
 
-    def distance(self, x, coordinate):
-        x_value = abs(x[0] - coordinate[0])
-        y_value = abs(x[1] - coordinate[1])
+    def distance(self,x, coordinate):
+        if (x != None and coordinate != None):
+            x_value = abs(x[0] - coordinate[0])
+            y_value = abs(x[1] - coordinate[1])
+        else:
+            return 10000  # large number because it cannot be compared to None
         return x_value + y_value
 
     def syncFrameOneWithFrameTwo(self):
@@ -366,16 +368,20 @@ class DrawHuman:
         self.trackingAdjacentFrame(self.leftFootFrameOne, self.leftFootFrameTwo)
         self.trackingAdjacentFrame(self.rightFootFrameOne, self.rightFootFrameTwo)
 
-    def trackingAdjacentFrame(self, frameOne, frameTwo):
-        newFrame = []
-        for i in range(len(frameTwo)):
-            try:
+    def trackingAdjacentFrame(self,frameOne, frameTwo):
+        try:
+            newFrame = []
+            for i in range(len(frameOne)):
                 newFrame.append(min(frameTwo, key=lambda x: self.distance(x, frameOne[i])))
-            except:
-                newFrame.append(None)
-        frameTwo.clear()
-        for i in range(len(newFrame)):
-            frameTwo.append(newFrame[i])
+            if (len(frameOne) != len(frameTwo)):
+                extras = self.checkForMissingCoordinate(frameTwo, newFrame)
+                for i in range(len(extras)):
+                    newFrame.append(extras[i])
+            frameTwo.clear()
+            for i in range(len(newFrame)):
+                frameTwo.append(newFrame[i])
+        except:
+            pass
 
     def syncHumanFromPreviousFrame(self):
         self.fixTracking(self.noseFrameOne, self.tempNoseFrameTwo)
@@ -384,18 +390,25 @@ class DrawHuman:
         self.fixTracking(self.leftFootFrameOne, self.tempLeftFootFrameTwo)
         self.fixTracking(self.rightFootFrameOne, self.tempRightFootFrameTwo)
 
-    def fixTracking(self, frameOne, tempFrame):
-        if tempFrame:
-            newFrame = []
-            for i in range(len(frameOne)):
-                try:
+    def checkForMissingCoordinate(self,one, two):
+        return list(set(one) - set(two))
+
+    def fixTracking(self,frameOne, tempFrame):
+        try:
+            if tempFrame:
+                newFrame = []
+                for i in range(len(tempFrame)):
                     newFrame.append(min(frameOne, key=lambda x: self.distance(x, tempFrame[i])))
-                except:
-                    newFrame.append(None)
-            frameOne.clear()
-            for i in range(len(newFrame)):
-                frameOne.append(newFrame[i])
-            tempFrame.clear()
+                if (len(frameOne) != len(tempFrame)):
+                    extras = self.checkForMissingCoordinate(frameOne, newFrame)
+                    for i in range(len(extras)):
+                        newFrame.append(extras[i])
+                frameOne.clear()
+                for i in range(len(newFrame)):
+                    frameOne.append(newFrame[i])
+                tempFrame.clear()
+        except:
+            pass
 
 class HumanCoordinate:
     def __init__(self, npimg, humans):

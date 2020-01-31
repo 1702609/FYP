@@ -1,15 +1,19 @@
+from math import sqrt
+
 
 class HumanContact:
 
-    def __init__(self, everyHumanCoordinate, offendingLimb):
+    def __init__(self, everyHumanCoordinate, offendingLimb, cmPerPixel):
         self.everyHumanCoordinate = everyHumanCoordinate
         self.offendingLimb = offendingLimb
+        self.acceptanceRange = 8/cmPerPixel
+
 
     def distance(self,x, coordinate):
         try:
             x_value = abs(x[0] - coordinate[0])
             y_value = abs(x[1] - coordinate[1])
-            return x_value + y_value
+            return sqrt(x_value**2 + y_value**2)
         except:
             return None
 
@@ -43,7 +47,9 @@ class HumanContact:
                 try:
                     minValue = min(i for i in distanceValue if i is not None)
                     minIndex = distanceValue.index(minValue)
-                    if minValue < 90:
+                    #print(distanceValue)
+                    #print(self.acceptanceRange)
+                    if minValue < self.acceptanceRange:
                         return True, minIndex
                 except:
                     pass
