@@ -6,7 +6,7 @@ class HumanContact:
     def __init__(self, everyHumanCoordinate, offendingLimb, cmPerPixel):
         self.everyHumanCoordinate = everyHumanCoordinate
         self.offendingLimb = offendingLimb
-        self.acceptanceRange = 8/cmPerPixel
+        self.acceptanceRange = 10/cmPerPixel
 
 
     def distance(self,x, coordinate):
@@ -48,7 +48,7 @@ class HumanContact:
                     minValue = min(i for i in distanceValue if i is not None)
                     minIndex = distanceValue.index(minValue)
                     #print(distanceValue)
-                    #print(self.acceptanceRange)
+                    #print("Threshold"+ str(self.acceptanceRange))
                     if minValue < self.acceptanceRange:
                         return True, minIndex
                 except:

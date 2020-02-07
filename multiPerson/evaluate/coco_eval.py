@@ -15,9 +15,9 @@ from lib.datasets.preprocessing import (inception_preprocess,
                                               ssd_preprocess, vgg_preprocess)
 from lib.network import im_transform                                              
 from lib.config import cfg, update_config
-from lib.utils.common import Human, BodyPart, CocoPart, CocoColors, CocoPairsRender, DrawHuman
+from lib.utils.common import Human, BodyPart, CocoPart, CocoColors, CocoPairsRender
 from lib.utils.paf_to_pose import paf_to_pose_cpp
-
+from MotionAnalysis import DrawHuman
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--cfg', help='experiment configure file name',

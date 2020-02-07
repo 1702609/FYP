@@ -63,11 +63,11 @@ class GUIForStats:
     def updateGUI(self, data, target, limb):
         if data is not None:
             speed = data * self.cmPerPixel * self.timeNeeded
-            if (speed >= 70):
+            if (speed >= 200):
                 target.config(text="Calculating.....")
             else:
                 target.config(text=str(round(speed, 2)) + " cm/s")
-                if (speed >= 31):
+                if (speed >= 100):
                     target.config(bg="red")
                     self.speedThreshold = True
                     self.offendingLimb = limb
