@@ -108,7 +108,6 @@ if __name__ == "__main__":
             hd.transferFrameTwoToTemp()
             danger,offendingLimb = gui.dangerousSpeed()
             if(danger):
-                print(offendingLimb)
                 checkForContact(oriImg,offendingLimb,cmPerPixel)
     # When everything is done, release the capture
     video_capture.release()

@@ -169,10 +169,31 @@ class DrawHuman:
 
     def syncFrameTwoWithFrameOne(self):
         self.trackingAdjacentFrame(self.noseFrameOne, self.noseFrameTwo)
+        self.removeWorst(self.noseFrameOne,self.noseFrameTwo)
         self.trackingAdjacentFrame(self.leftHandFrameOne, self.leftHandFrameTwo)
+        self.removeWorst(self.leftHandFrameOne, self.leftHandFrameTwo)
         self.trackingAdjacentFrame(self.rightHandFrameOne, self.rightHandFrameTwo)
+        self.removeWorst(self.rightHandFrameOne, self.rightHandFrameTwo)
         self.trackingAdjacentFrame(self.leftFootFrameOne, self.leftFootFrameTwo)
+        self.removeWorst(self.leftFootFrameOne,self.leftHandFrameTwo)
         self.trackingAdjacentFrame(self.rightFootFrameOne, self.rightFootFrameTwo)
+        self.removeWorst(self.rightFootFrameOne, self.rightFootFrameTwo)
+
+    def removeWorst(self,f1, f2):
+        record = []
+        if (len(f2) != len(self.humans)):
+            for i in range(len(f1)):
+                try:
+                    x = abs(f1[i][0] - f2[i][0])
+                    y = abs(f1[i][1] - f2[i][1])
+                    record.append(x + y)
+                except:
+                    record.append(10000)
+        while (len(f2) != len(self.humans)):
+            index = record.index(max(record))
+            del record[index]
+            del f1[index]
+            del f2[index]
 
     def trackingAdjacentFrame(self, frameOne, frameTwo):
         try:
