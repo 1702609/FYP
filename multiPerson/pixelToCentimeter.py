@@ -1,71 +1,93 @@
-from statistics import median
+import sys
 
+sys.path.append('.')
 import cv2
-from math import sqrt
-
 import numpy as np
-from imutils.object_detection import non_max_suppression
+import torch
+
+from lib.config import cfg
+from evaluate.coco_eval import get_outputs
+from lib.utils.common import CocoPart, CocoColors, CocoPairsRender
+from lib.utils.paf_to_pose import paf_to_pose_cpp
+
 
 
 class pixelToCentimeter:
-    def __init__(self, videoPath):
-        self.targetVideo = videoPath
 
-    def calculateCentimeterPerPixel(self):
-        video = cv2.VideoCapture(self.targetVideo);
+    def __init__(self, videoPath, model):
+        self.videoPath = videoPath
+        self.model = model
+
+    def getHeight(self):
         frames = 0
-        heightArray = []
-        hog = cv2.HOGDescriptor()
-        hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
-        while video.isOpened() and frames <= 120:
+        video = cv2.VideoCapture(self.videoPath)
+        self.height = []
+        while video.isOpened() and frames <= 50:
             frames += 1
             ret, oriImg = video.read()
-            (rects, weights) = hog.detectMultiScale(oriImg, winStride=(4, 4),
-                                                    padding=(8, 8), scale=3.2)
-            for (x, y, w, h) in rects:
-                cv2.rectangle(oriImg, (x, y), (x + w, y + h), (0, 0, 255), 2)
-                heightArray.append(h)
-            rects = np.array([[x, y, x + w, y + h] for (x, y, w, h) in rects])
-            pick = non_max_suppression(rects, probs=None, overlapThresh=0.65)
-            for (xA, yA, xB, yB) in pick:
-                cv2.rectangle(oriImg, (xA, yA), (xB, yB), (0, 255, 0), 2)
 
-            cv2.imshow('Video', oriImg)
+            with torch.no_grad():
+                paf, heatmap, imscale = get_outputs(
+                    oriImg, self.model, 'rtpose')
+
+            humans = paf_to_pose_cpp(heatmap, paf, cfg)
+
+            out = self.draw_humans(oriImg, humans)
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            org = (50, 50)
+            fontScale = 1
+            color = (0, 0, 200)
+            thickness = 2
+            out = cv2.putText(out, 'Calculating height', org, font,
+                                fontScale, color, thickness, cv2.LINE_AA)
+            cv2.imshow('Video', out)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
         video.release()
         cv2.destroyAllWindows()
-
         averageHeight = 170
-
-        clusterGroup = self.parse(heightArray, 9)
-        meanData = []
-        for cluster in clusterGroup:
-            meanData.append(self.Average(cluster))
-        meanData.sort()
-        answer = averageHeight / median(meanData)
+        self.height.sort()
+        a = np.array(self.height)
+        lq = np.percentile(a, 60)
+        answer = averageHeight / lq
         return answer
 
-    def Average(self, lst):
-        a = round(sum(lst) / len(lst), 2)
-        return a
+    def draw_humans(self, npimg, humans):
+        image_h, image_w = npimg.shape[:2]
+        centers = {}
+        for human in humans:
+            # draw point
+            for i in range(CocoPart.Background.value):
+                if i not in human.body_parts.keys():
+                    continue
+                body_part = human.body_parts[i]
+                center = (int(body_part.x * image_w + 0.5), int(body_part.y * image_h + 0.5))
+                centers[i] = center
+                cv2.circle(npimg, center, 3, CocoColors[i], thickness=3, lineType=8, shift=0)
+            self.storeHeight(human.body_parts, centers)
+            # draw line
+            for pair_order, pair in enumerate(CocoPairsRender):
+                if pair[0] not in human.body_parts.keys() or pair[1] not in human.body_parts.keys():
+                    continue
+                cv2.line(npimg, centers[pair[0]], centers[pair[1]], CocoColors[pair_order], 3)
+        return npimg
 
-    def stat(self, lst):
-        """Calculate mean and std deviation from the input list."""
-        n = float(len(lst))
-        mean = sum(lst) / n
-        stdev = sqrt((sum(x * x for x in lst) / n) - (mean * mean))
-        return mean, stdev
-
-    def parse(self, lst, n):
-        cluster = []
-        for i in lst:
-            if len(cluster) <= 1:  # the first two values are going directly in
-                cluster.append(i)
+    def storeHeight(self, bodyParts, points):
+        identifiedParts = {}
+        for i in range(CocoPart.Background.value):
+            if i not in bodyParts.keys():
                 continue
-            mean, stdev = self.stat(cluster)
-            if abs(mean - i) > n * stdev:  # check the "distance"
-                yield cluster
-                cluster[:] = []  # reset cluster to the empty list
-            cluster.append(i)
-        yield cluster
+            identifiedParts[bodyParts[i].part_idx] = points[i]
+        head = self.getCoordinatePerBodypart(identifiedParts, [0, 1, 14, 15, 16, 17])  # head
+        lFoot = self.getCoordinatePerBodypart(identifiedParts, [13])  # Lfoot
+        rFoot = self.getCoordinatePerBodypart(identifiedParts, [10])  # Rfoot
+        if (head != None and lFoot != None):
+            self.height.append(abs(head[1] - lFoot[1]))
+        if (head != None and rFoot != None):
+            self.height.append(abs(head[1] - rFoot[1]))
+
+    def getCoordinatePerBodypart(self, identifiedParts, ids):
+        for body in ids:
+            if body in identifiedParts:
+                return identifiedParts.get(body)
+        return None

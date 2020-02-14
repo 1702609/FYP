@@ -190,10 +190,13 @@ class DrawHuman:
                 except:
                     record.append(10000)
         while (len(f2) != len(self.humans)):
-            index = record.index(max(record))
-            del record[index]
-            del f1[index]
-            del f2[index]
+            try:
+                index = record.index(max(record))
+                del record[index]
+                del f1[index]
+                del f2[index]
+            except:
+                pass
 
     def trackingAdjacentFrame(self, frameOne, frameTwo):
         try:

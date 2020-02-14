@@ -1,5 +1,4 @@
 import sys
-from tkinter import Label
 
 from MotionAnalysis import DrawHuman
 from GUIForStats import GUIForStats
@@ -39,8 +38,8 @@ model.eval()
 
 def determineHumanSizeInVideo():
     print("Calculating the pixels required to cover a person's height...")
-    cmPerPixelObject = pixelToCentimeter(videoPath)
-    return cmPerPixelObject.calculateCentimeterPerPixel()
+    cmPerPixelObject = pixelToCentimeter(videoPath,model)
+    return cmPerPixelObject.getHeight()
 
 
 def checkForContact(img, offendingLimb, cmPerPixel):
@@ -60,32 +59,32 @@ def checkForContact(img, offendingLimb, cmPerPixel):
         print("Victim has been attacked in the " + bodyPartVictim+'\n')
 
 if __name__ == "__main__":
-    videoPath = 'dataset/Assault/assault4.mp4'
+    videoPath = 'dataset/Assault/assault10.mp4'
 
     evenFrame = True;
     video_capture = cv2.VideoCapture(videoPath)
     #fps = video_capture.get(cv2.CAP_PROP_FPS)
     fps = 8
-    #try:
-        #cmPerPixel = determineHumanSizeInVideo()
-    #except:
-    cmPerPixel = 0.816
-    print("1 pixel represents "+str(cmPerPixel)+" cm")
+    try:
+        cmPerPixel = determineHumanSizeInVideo()
+    except:
+        cmPerPixel = 0.816
+    print("1 pixel represents " + str(cmPerPixel) + " cm")
     debugMode = False
     hd = DrawHuman(debugMode)
-    gui = GUIForStats(cmPerPixel,fps)
+    gui = GUIForStats(cmPerPixel, fps)
     while video_capture.isOpened():
         evenFrame = not evenFrame
         ret, oriImg = video_capture.read()
-        
+
         shape_dst = np.min(oriImg.shape[0:2])
 
         with torch.no_grad():
             paf, heatmap, imscale = get_outputs(
                 oriImg, model, 'rtpose')
-                  
+
         humans = paf_to_pose_cpp(heatmap, paf, cfg)
-        #print("There are "+ str(len(humans)) + " humans in the video")
+        # print("There are "+ str(len(humans)) + " humans in the video")
         out = hd.draw_humans(oriImg, humans, evenFrame)
         cv2.imshow('Video', out)
 
