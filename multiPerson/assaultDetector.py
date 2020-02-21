@@ -59,7 +59,7 @@ def checkForContact(img, offendingLimb, cmPerPixel):
         print("Victim has been attacked in the " + bodyPartVictim+'\n')
 
 if __name__ == "__main__":
-    videoPath = 'dataset/Assault/assault10.mp4'
+    videoPath = 'dataset/Assault/assault4.mp4'
 
     evenFrame = True;
     video_capture = cv2.VideoCapture(videoPath)
