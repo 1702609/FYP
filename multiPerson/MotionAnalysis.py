@@ -169,34 +169,48 @@ class DrawHuman:
 
     def syncFrameTwoWithFrameOne(self):
         self.trackingAdjacentFrame(self.noseFrameOne, self.noseFrameTwo)
-        self.removeWorst(self.noseFrameOne,self.noseFrameTwo)
-        self.trackingAdjacentFrame(self.leftHandFrameOne, self.leftHandFrameTwo)
-        self.removeWorst(self.leftHandFrameOne, self.leftHandFrameTwo)
-        self.trackingAdjacentFrame(self.rightHandFrameOne, self.rightHandFrameTwo)
-        self.removeWorst(self.rightHandFrameOne, self.rightHandFrameTwo)
-        self.trackingAdjacentFrame(self.leftFootFrameOne, self.leftFootFrameTwo)
-        self.removeWorst(self.leftFootFrameOne,self.leftHandFrameTwo)
-        self.trackingAdjacentFrame(self.rightFootFrameOne, self.rightFootFrameTwo)
-        self.removeWorst(self.rightFootFrameOne, self.rightFootFrameTwo)
+        self.removeObsolete(self.noseFrameOne, self.noseFrameTwo)
 
-    def removeWorst(self,f1, f2):
-        record = []
-        if (len(f2) != len(self.humans)):
+        self.trackingAdjacentFrame(self.leftHandFrameOne, self.leftHandFrameTwo)
+        self.removeObsolete(self.leftHandFrameOne, self.leftHandFrameTwo)
+
+        self.trackingAdjacentFrame(self.rightHandFrameOne, self.rightHandFrameTwo)
+        self.removeObsolete(self.rightHandFrameOne, self.rightHandFrameTwo)
+
+        self.trackingAdjacentFrame(self.leftFootFrameOne, self.leftFootFrameTwo)
+        self.removeObsolete(self.leftFootFrameOne, self.leftFootFrameTwo)
+
+        self.trackingAdjacentFrame(self.rightFootFrameOne, self.rightFootFrameTwo)
+        self.removeObsolete(self.rightFootFrameOne, self.rightFootFrameTwo)
+
+    def removeObsolete(self, f1, f2):
+        recordF1 = []
+        recordF2 = []
+        if (len(f1) > len(self.humans)):
             for i in range(len(f1)):
                 try:
                     x = abs(f1[i][0] - f2[i][0])
                     y = abs(f1[i][1] - f2[i][1])
-                    record.append(x + y)
+                    recordF1.append(x + y)
                 except:
-                    record.append(10000)
-        while (len(f2) != len(self.humans)):
-            try:
-                index = record.index(max(record))
-                del record[index]
-                del f1[index]
-                del f2[index]
-            except:
-                pass
+                    recordF1.append(10000)
+        if (len(f2) > len(self.humans)):
+            for i in range(len(f2)):
+                try:
+                    x = abs(f1[i][0] - f2[i][0])
+                    y = abs(f1[i][1] - f2[i][1])
+                    recordF2.append(x + y)
+                except:
+                    recordF2.append(10000)
+        while (len(f1) > len(self.humans)):
+            index = recordF1.index(max(recordF1))
+            del recordF1[index]
+            del f1[index]
+        while (len(f2) > len(self.humans)):
+            index = recordF2.index(max(recordF2))
+            del recordF2[index]
+            del f2[index]
+
 
     def trackingAdjacentFrame(self, frameOne, frameTwo):
         try:

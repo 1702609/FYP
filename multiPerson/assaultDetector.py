@@ -59,7 +59,7 @@ def checkForContact(img, offendingLimb, cmPerPixel):
         print("Victim has been attacked in the " + bodyPartVictim+'\n')
 
 if __name__ == "__main__":
-    videoPath = 'dataset/Assault/assault4.mp4'
+    videoPath = 'dataset/Assault/assault11.mp4'
 
     evenFrame = True;
     video_capture = cv2.VideoCapture(videoPath)
@@ -84,9 +84,8 @@ if __name__ == "__main__":
                 oriImg, model, 'rtpose')
 
         humans = paf_to_pose_cpp(heatmap, paf, cfg)
-        # print("There are "+ str(len(humans)) + " humans in the video")
-        out = hd.draw_humans(oriImg, humans, evenFrame)
-        cv2.imshow('Video', out)
+        oriImg = hd.draw_humans(oriImg, humans, evenFrame)
+        cv2.imshow('Video', oriImg)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
