@@ -25,7 +25,7 @@ class pixelToCentimeter:
         while video.isOpened() and frames <= 50:
             frames += 1
             ret, oriImg = video.read()
-
+            oriImg = cv2.resize(oriImg, (1280, 720), fx=0, fy=0, interpolation=cv2.INTER_CUBIC)
             with torch.no_grad():
                 paf, heatmap, imscale = get_outputs(
                     oriImg, self.model, 'rtpose')

@@ -76,7 +76,7 @@ if __name__ == "__main__":
     while video_capture.isOpened():
         evenFrame = not evenFrame
         ret, oriImg = video_capture.read()
-
+        oriImg = cv2.resize(oriImg, (1280, 720), fx=0, fy=0, interpolation=cv2.INTER_CUBIC)
         shape_dst = np.min(oriImg.shape[0:2])
 
         with torch.no_grad():
